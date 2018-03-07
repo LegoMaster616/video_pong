@@ -3,43 +3,83 @@ import gab.opencv.*;
 import java.awt.Rectangle;
 
 //Parameters:
-color leftGloveColor = color(171, 103, 54);
-color rightGloveColor = color(78, 90, 127);
+color leftGloveColor = color(196,62,44);
+color rightGloveColor = color(64,127,76);
 int leftGloveTolerance = 40;
-int rightGloveTolerance = 40;
+int rightGloveTolerance = 30;
+
+int paddleDistanceFromSide = 40;
+int paddleWidth = 25;
+int paddleHeight = 200;
+int ballRadius = 20;
 
 int cvScale = 8; //Should be power of two
 
-int minArea = 4096/(cvScale*cvScale);
+int minArea = 2500;
+
+int maxSpeed = 1000;
 
 //Variables
 float leftPaddleHeight = 0.5;
 float rightPaddleHeight = 0.5;
 
-boolean debug = true;
+boolean debug = false;
+boolean printCamera = false;
+boolean calibrateRight = false;
+boolean calibrateLeft = false;
+
+float ballX = 640;
+float ballY = 360;
+int ballVelX = 200;
+int ballVelY = 300;
+
+int rightScore = 0;
+int leftScore = 0;
+
+int delta;
+long lastTime;
 
 //Objects:
 Capture webcam;
 PImage webcamCopy;
 OpenCV cv;
 
+ArrayList<Contour> globs;
+
 void setup() {
-  size(1280, 1080); //normally 1280x720
-  
+  size(1280, 720, P2D);
+   
+  if(printCamera)
+  {
+    printArray(Capture.list());
+  }
+   
   webcam = new Capture(this, "name=Logitech HD Webcam C270,size=1280x720,fps=30");
   webcam.start();
   
+
+  
   while(!webcam.available()) {
     delay(100);
+    println("waiting for camera");
   }
   
-  webcam.read();
-  cv = new OpenCV(this, webcam.width/cvScale, webcam.height/cvScale);
+
+  
+  cv = new OpenCV(this, width/cvScale, height/cvScale);
+  lastTime = millis();
 }
 
 void draw() {
   if(webcam.available()) {
+    delta = (int)(millis() - lastTime);
+    lastTime = millis();
+
+
+
     webcam.read();
+
+    webcam.updatePixels();
     
     pushMatrix();
       scale(-1, 1);
@@ -47,7 +87,9 @@ void draw() {
     popMatrix();
     //image(webcam, 0, 0);
     
-    
+    stroke(0);
+    strokeWeight(0);
+    line(-width/2, 0, -width/2, height);
     
     //Get heights
     Contour blob = findBiggestBlobColor(leftGloveColor, leftGloveTolerance);
@@ -67,13 +109,13 @@ void draw() {
         popMatrix();
       }
     }
-    //Draw left threshold output
-    if(debug) {
-      pushMatrix();
-        scale(-cvScale/2, cvScale/2);
-        image(webcamCopy, -webcam.width/cvScale, webcam.height*2/cvScale);
-      popMatrix();
-    }
+    ////Draw left threshold output
+    //if(debug) {
+    //  pushMatrix();
+    //    scale(-cvScale/2, cvScale/2);
+    //    image(webcamCopy, -webcam.width/cvScale, webcam.height*2/cvScale);
+    //  popMatrix();
+    //}
     
     blob = findBiggestBlobColor(rightGloveColor, rightGloveTolerance);
     if(blob != null && blob.area() > minArea)
@@ -93,42 +135,131 @@ void draw() {
       }
     }
     //Draw right threshold output
-    if(debug) {
-      pushMatrix();
-        scale(-cvScale/2, cvScale/2);
-        image(webcamCopy, -webcam.width*2/cvScale, webcam.height*2/cvScale);
-      popMatrix();
-    }
+    //if(debug) {
+    //  pushMatrix();
+    //    scale(-cvScale/2, cvScale/2);
+    //    image(webcamCopy, -webcam.width*2/cvScale, webcam.height*2/cvScale);
+    //  popMatrix();
+    //}
     
     //Draw paddles
+    rectMode(CENTER);
     fill(leftGloveColor);
     stroke(0);
     strokeWeight(2);
-    rect(70, leftPaddleHeight*webcam.height-100, 40, 200);
+    rect(paddleDistanceFromSide, leftPaddleHeight*webcam.height, paddleWidth, paddleHeight);
     
     fill(rightGloveColor);
     stroke(0);
     strokeWeight(2);
-    rect(1170, rightPaddleHeight*webcam.height-100, 40, 200);
+    rect(width - paddleDistanceFromSide, rightPaddleHeight*webcam.height, paddleWidth, paddleHeight);
+    rectMode(CORNER);
     
     
     
-    if(debug || !debug)
+    if(debug)
     {
       stroke(0, 0, 0);
       strokeWeight(1);
       fill(255, 255, 255);
       textSize(24);
       text("fps: "+nf(frameRate, 0,2), 20, 20);
+      if(calibrateLeft || calibrateRight){
+        fill(webcam.pixels[webcam.pixels.length/2-width/2]);
+        stroke(0);
+        strokeWeight(2);
+        ellipse(1280/2, 720/2, 30, 30);
+        
+        if(calibrateLeft) {
+          leftGloveColor = webcam.pixels[webcam.pixels.length/2-width/2];
+          fill(color(255, 255, 255));
+          text("calibrate left", 20, 40);
+        }
+        else {
+          rightGloveColor = webcam.pixels[webcam.pixels.length/2-width/2];
+          fill(color(255, 255, 255));
+          text("calibrate right", 20, 40);
+        }
+
+      }
+      if(calibrateRight) text("calibrate right", 20, 40);
     }
+    
+    
+
+        
+    fill(color(255, 255, 255));
+    stroke(0);
+    strokeWeight(2);
+    ellipse(ballX, ballY, ballRadius*2, ballRadius*2);
+    
+    
+    
   }
+    ballX += ballVelX * delta/1000.0;
+    ballY += ballVelY * delta/1000.0;
+    
+    if(ballX + ballRadius > width - paddleDistanceFromSide - paddleWidth/2 && ballY + ballRadius > rightPaddleHeight*height - paddleHeight/2 && ballY - ballRadius < rightPaddleHeight*height + paddleHeight/2){
+      ballX = width - paddleDistanceFromSide - paddleWidth/2 - ballRadius;
+      if(ballVelX < maxSpeed)
+        ballVelX += 30;
+      ballVelX *= -1;
+    }
+    if(ballX - ballRadius < paddleDistanceFromSide + paddleWidth/2 && ballY + ballRadius > leftPaddleHeight*height - paddleHeight/2 && ballY - ballRadius < leftPaddleHeight*height + paddleHeight/2){
+      ballX = paddleDistanceFromSide + ballRadius + paddleWidth/2;
+      if(-ballVelX < maxSpeed)
+        ballVelX -= 30;
+      println(ballVelX);
+      ballVelX *= -1;
+    }
+    if(ballX < 0 || ballX > width)
+    {
+      ballX = 640;
+      ballY = 360;
+      ballVelY = (int)random(200) + 200;
+      ballVelX = 300;
+      if(ballX < 0)
+      {
+        rightScore++;
+      }
+      else
+      {
+        leftScore++;
+        ballVelX *= -1;
+      }
+    }
+    if(ballY + ballRadius > height){
+      ballY = height - ballRadius;
+      ballVelY *= -1;
+    }
+    if(ballY - ballRadius < 0){
+      ballY = ballRadius;
+      ballVelY *= -1;
+    }
 }
 
 void keyPressed() {
   if(key == 'd') debug = !debug;
+  if(key == ','){
+    if(calibrateLeft)
+    {
+      println("new left color: "+(leftGloveColor >> 16 & 0xFF)+","+(leftGloveColor >> 8 & 0xFF)+","+(leftGloveColor & 0xFF));
+    }
+    calibrateLeft = !calibrateLeft;
+    calibrateRight = false;
+  }
+  if(key == '.'){
+    if(calibrateRight){
+      println("new right color: "+(rightGloveColor >> 16 & 0xFF)+","+(rightGloveColor >> 8 & 0xFF)+","+(rightGloveColor & 0xFF));
+    }
+    calibrateRight = !calibrateRight;
+    calibrateLeft = false;
+  }  
   
-  println(key);
-  
+  if(key == 'r'){
+    ballX = 640;
+    ballY = 360;
+  }
 }
 
 void thresholdColor(color target, int tolerance, PImage img)
@@ -168,11 +299,11 @@ Contour findBiggestBlobColor(color gloveColor, int gloveTolerance)
   cv.dilate();
   cv.erode();
 
-  ArrayList<Contour> blobs = cv.findContours();
-  if(!blobs.isEmpty())
+  globs = cv.findContours();
+  if(!globs.isEmpty())
   {
-    Contour biggest = blobs.get(0);
-    for (Contour blob : blobs) {
+    Contour biggest = globs.get(0);
+    for (Contour blob : globs) {
       if(blob.area() > biggest.area())
       {
         biggest = blob;
@@ -183,6 +314,32 @@ Contour findBiggestBlobColor(color gloveColor, int gloveTolerance)
   }
   return null;
 }
+
+//void find2BiggestBlobsColor(color gloveColor, int gloveTolerance)
+//{
+//  webcamCopy = webcam.get();
+//  webcamCopy.resize(webcam.width/cvScale, 0);
+//  thresholdColor(gloveColor, gloveTolerance, webcamCopy);
+  
+//  cv.loadImage(webcamCopy);
+//  cv.dilate();
+//  cv.erode();
+
+//  ArrayList<Contour> blobs = cv.findContours();
+//  if(!blobs.isEmpty())
+//  {
+//    Contour biggest = blobs.get(0);
+//    for (Contour blob : blobs) {
+//      if(blob.area() > biggest.area())
+//      {
+//        biggest = blob;
+//      }
+//    }
+    
+//    return biggest;
+//  }
+//  return null;
+//}
 
 
   
