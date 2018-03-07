@@ -24,7 +24,7 @@ float leftPaddleHeight = 0.5;
 float rightPaddleHeight = 0.5;
 
 boolean debug = false;
-boolean printCamera = false;
+boolean printCameraList = false;
 boolean calibrateRight = false;
 boolean calibrateLeft = false;
 
@@ -43,13 +43,12 @@ long lastTime;
 Capture webcam;
 PImage webcamCopy;
 OpenCV cv;
-
 ArrayList<Contour> blobs;
 
 void setup() {
   size(1280, 720, P2D);
    
-  if(printCamera)
+  if(printCameraList)
   {
     printArray(Capture.list());
   }
@@ -57,15 +56,13 @@ void setup() {
   webcam = new Capture(this, "name=Logitech HD Webcam C270,size=1280x720,fps=30");
   webcam.start();
   
-
-  
+  print("Waiting for camera");
   while(!webcam.available()) {
     delay(100);
-    println("waiting for camera");
+    print(".");
   }
-  
+  println();
 
-  
   cv = new OpenCV(this, width/cvScale, height/cvScale);
   lastTime = millis();
 }
@@ -75,17 +72,13 @@ void draw() {
     delta = (int)(millis() - lastTime);
     lastTime = millis();
 
-
-
     webcam.read();
-
     webcam.updatePixels();
     
     pushMatrix();
       scale(-1, 1);
       image(webcam, -webcam.width, 0);
     popMatrix();
-    //image(webcam, 0, 0);
     
     stroke(255);
     strokeWeight(10);
@@ -140,13 +133,11 @@ void draw() {
     strokeWeight(2);
     rect(width - paddleDistanceFromSide, rightPaddleHeight*webcam.height, paddleWidth, paddleHeight);
     rectMode(CORNER);
-    
-    
-    
+      
     if(debug)
     {
       fill(0);
-      rect(20, 20, 50, 40);
+      rect(20, 0, 160, 50);
       fill(255);
       textSize(24);
       text("fps: "+nf(frameRate, 0,2), 20, 20);
@@ -154,7 +145,7 @@ void draw() {
         fill(webcam.pixels[webcam.pixels.length/2-width/2]);
         stroke(0);
         strokeWeight(2);
-        ellipse(1280/2, 720/2, 30, 30);
+        ellipse(width/2, height/2, 30, 30);
         
         if(calibrateLeft) {
           leftGloveColor = webcam.pixels[webcam.pixels.length/2-width/2];
@@ -166,14 +157,9 @@ void draw() {
           fill(255);
           text("calibrate right", 20, 40);
         }
-
       }
-      if(calibrateRight) text("calibrate right", 20, 40);
     }
-    
-    
-
-        
+   
     fill(color(255, 255, 255));
     stroke(0);
     strokeWeight(2);
@@ -232,8 +218,14 @@ void draw() {
 }
 
 void keyPressed() {
-  if(key == 'd') debug = !debug;
-  if(key == ','){
+  if(key == 'd'){
+    if(debug){
+      calibrateLeft = false;
+      calibrateRight = false;
+    }
+    debug = !debug;
+  }
+  if(debug && key == ','){
     if(calibrateLeft)
     {
       println("new left color: "+(leftGloveColor >> 16 & 0xFF)+","+(leftGloveColor >> 8 & 0xFF)+","+(leftGloveColor & 0xFF));
@@ -241,7 +233,7 @@ void keyPressed() {
     calibrateLeft = !calibrateLeft;
     calibrateRight = false;
   }
-  if(key == '.'){
+  if(debug && key == '.'){
     if(calibrateRight){
       println("new right color: "+(rightGloveColor >> 16 & 0xFF)+","+(rightGloveColor >> 8 & 0xFF)+","+(rightGloveColor & 0xFF));
     }
@@ -252,6 +244,8 @@ void keyPressed() {
   if(key == 'r'){
     ballX = 640;
     ballY = 360;
+    leftScore = 0;
+    rightScore = 0;
   }
 }
 
@@ -302,37 +296,8 @@ Contour findBiggestBlobColor(color gloveColor, int gloveTolerance)
         biggest = blob;
       }
     }
-    
     return biggest;
   }
   return null;
 }
-
-//void find2BiggestBlobsColor(color gloveColor, int gloveTolerance)
-//{
-//  webcamCopy = webcam.get();
-//  webcamCopy.resize(webcam.width/cvScale, 0);
-//  thresholdColor(gloveColor, gloveTolerance, webcamCopy);
-  
-//  cv.loadImage(webcamCopy);
-//  cv.dilate();
-//  cv.erode();
-
-//  ArrayList<Contour> blobs = cv.findContours();
-//  if(!blobs.isEmpty())
-//  {
-//    Contour biggest = blobs.get(0);
-//    for (Contour blob : blobs) {
-//      if(blob.area() > biggest.area())
-//      {
-//        biggest = blob;
-//      }
-//    }
-    
-//    return biggest;
-//  }
-//  return null;
-//}
-
-
   
