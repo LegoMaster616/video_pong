@@ -109,13 +109,6 @@ void draw() {
         popMatrix();
       }
     }
-    ////Draw left threshold output
-    //if(debug) {
-    //  pushMatrix();
-    //    scale(-cvScale/2, cvScale/2);
-    //    image(webcamCopy, -webcam.width/cvScale, webcam.height*2/cvScale);
-    //  popMatrix();
-    //}
     
     blob = findBiggestBlobColor(rightGloveColor, rightGloveTolerance);
     if(blob != null && blob.area() > minArea)
@@ -134,13 +127,6 @@ void draw() {
         popMatrix();
       }
     }
-    //Draw right threshold output
-    //if(debug) {
-    //  pushMatrix();
-    //    scale(-cvScale/2, cvScale/2);
-    //    image(webcamCopy, -webcam.width*2/cvScale, webcam.height*2/cvScale);
-    //  popMatrix();
-    //}
     
     //Draw paddles
     rectMode(CENTER);
