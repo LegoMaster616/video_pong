@@ -87,9 +87,9 @@ void draw() {
     popMatrix();
     //image(webcam, 0, 0);
     
-    stroke(0);
-    strokeWeight(0);
-    line(-width/2, 0, -width/2, height);
+    stroke(255);
+    strokeWeight(10);
+    line(width/2, 0, width/2, height);
     
     //Get heights
     Contour blob = findBiggestBlobColor(leftGloveColor, leftGloveTolerance);
@@ -193,6 +193,13 @@ void draw() {
     strokeWeight(2);
     ellipse(ballX, ballY, ballRadius*2, ballRadius*2);
     
+    fill(255);
+    textAlign(RIGHT);
+    textSize(40);
+    text(leftScore, width/2-50, 60);
+    textAlign(LEFT);
+    textSize(40);
+    text(rightScore, width/2+50, 60);
     
     
   }
@@ -214,8 +221,6 @@ void draw() {
     }
     if(ballX < 0 || ballX > width)
     {
-      ballX = 640;
-      ballY = 360;
       ballVelY = (int)random(200) + 200;
       ballVelX = 300;
       if(ballX < 0)
@@ -227,6 +232,8 @@ void draw() {
         leftScore++;
         ballVelX *= -1;
       }
+      ballX = 640;
+      ballY = 360;
     }
     if(ballY + ballRadius > height){
       ballY = height - ballRadius;
