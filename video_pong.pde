@@ -8,26 +8,33 @@ color rightGloveColor = color(64,127,76);
 int leftGloveTolerance = 40;
 int rightGloveTolerance = 30;
 
-int paddleDistanceFromSide = 70;
-int ballRadius = 30;
+int paddleDistanceFromSide = 40;
+int paddleWidth = 25;
+int paddleHeight = 200;
+int ballRadius = 20;
 
-int cvScale = 4; //Should be power of two
+int cvScale = 8; //Should be power of two
 
 int minArea = 2500;
+
+int maxSpeed = 1000;
 
 //Variables
 float leftPaddleHeight = 0.5;
 float rightPaddleHeight = 0.5;
 
-boolean debug = true;
-boolean printCamera = true;
+boolean debug = false;
+boolean printCamera = false;
 boolean calibrateRight = false;
 boolean calibrateLeft = false;
 
 float ballX = 640;
 float ballY = 360;
-int ballVelX = 300;
+int ballVelX = 200;
 int ballVelY = 300;
+
+int rightScore = 0;
+int leftScore = 0;
 
 int delta;
 long lastTime;
@@ -80,7 +87,9 @@ void draw() {
     popMatrix();
     //image(webcam, 0, 0);
     
-    
+    stroke(0);
+    strokeWeight(0);
+    line(-width/2, 0, -width/2, height);
     
     //Get heights
     Contour blob = findBiggestBlobColor(leftGloveColor, leftGloveTolerance);
@@ -134,15 +143,17 @@ void draw() {
     //}
     
     //Draw paddles
+    rectMode(CENTER);
     fill(leftGloveColor);
     stroke(0);
     strokeWeight(2);
-    rect(paddleDistanceFromSide, leftPaddleHeight*webcam.height-100, 40, 200);
+    rect(paddleDistanceFromSide, leftPaddleHeight*webcam.height, paddleWidth, paddleHeight);
     
     fill(rightGloveColor);
     stroke(0);
     strokeWeight(2);
-    rect(width - paddleDistanceFromSide, rightPaddleHeight*webcam.height-100, 40, 200);
+    rect(width - paddleDistanceFromSide, rightPaddleHeight*webcam.height, paddleWidth, paddleHeight);
+    rectMode(CORNER);
     
     
     
@@ -175,22 +186,47 @@ void draw() {
     }
     
     
-    ballX += ballVelX * delta/1000.0;
-    ballY += ballVelY * delta/1000.0;
+
         
     fill(color(255, 255, 255));
     stroke(0);
     strokeWeight(2);
-    ellipse(ballX, ballY, 60, 60);
+    ellipse(ballX, ballY, ballRadius*2, ballRadius*2);
     
     
-    if(ballX + ballRadius > width - paddleDistanceFromSide){
-      ballX = width - paddleDistanceFromSide - ballRadius;
+    
+  }
+    ballX += ballVelX * delta/1000.0;
+    ballY += ballVelY * delta/1000.0;
+    
+    if(ballX + ballRadius > width - paddleDistanceFromSide - paddleWidth/2 && ballY + ballRadius > rightPaddleHeight*height - paddleHeight/2 && ballY - ballRadius < rightPaddleHeight*height + paddleHeight/2){
+      ballX = width - paddleDistanceFromSide - paddleWidth/2 - ballRadius;
+      if(ballVelX < maxSpeed)
+        ballVelX += 30;
       ballVelX *= -1;
     }
-    if(ballX - ballRadius < paddleDistanceFromSide + 40){
-      ballX = paddleDistanceFromSide + ballRadius + 40;
+    if(ballX - ballRadius < paddleDistanceFromSide + paddleWidth/2 && ballY + ballRadius > leftPaddleHeight*height - paddleHeight/2 && ballY - ballRadius < leftPaddleHeight*height + paddleHeight/2){
+      ballX = paddleDistanceFromSide + ballRadius + paddleWidth/2;
+      if(-ballVelX < maxSpeed)
+        ballVelX -= 30;
+      println(ballVelX);
       ballVelX *= -1;
+    }
+    if(ballX < 0 || ballX > width)
+    {
+      ballX = 640;
+      ballY = 360;
+      ballVelY = (int)random(200) + 200;
+      ballVelX = 300;
+      if(ballX < 0)
+      {
+        rightScore++;
+      }
+      else
+      {
+        leftScore++;
+        ballVelX *= -1;
+      }
     }
     if(ballY + ballRadius > height){
       ballY = height - ballRadius;
@@ -200,7 +236,6 @@ void draw() {
       ballY = ballRadius;
       ballVelY *= -1;
     }
-  }
 }
 
 void keyPressed() {
