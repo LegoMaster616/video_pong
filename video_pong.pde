@@ -28,8 +28,8 @@ boolean printCamera = false;
 boolean calibrateRight = false;
 boolean calibrateLeft = false;
 
-float ballX = 640;
-float ballY = 360;
+float ballX = width/2;
+float ballY = height/2;
 int ballVelX = 200;
 int ballVelY = 300;
 
@@ -44,7 +44,7 @@ Capture webcam;
 PImage webcamCopy;
 OpenCV cv;
 
-ArrayList<Contour> globs;
+ArrayList<Contour> blobs;
 
 void setup() {
   size(1280, 720, P2D);
@@ -145,9 +145,9 @@ void draw() {
     
     if(debug)
     {
-      stroke(0, 0, 0);
-      strokeWeight(1);
-      fill(255, 255, 255);
+      fill(0);
+      rect(20, 20, 50, 40);
+      fill(255);
       textSize(24);
       text("fps: "+nf(frameRate, 0,2), 20, 20);
       if(calibrateLeft || calibrateRight){
@@ -158,12 +158,12 @@ void draw() {
         
         if(calibrateLeft) {
           leftGloveColor = webcam.pixels[webcam.pixels.length/2-width/2];
-          fill(color(255, 255, 255));
+          fill(255);
           text("calibrate left", 20, 40);
         }
         else {
           rightGloveColor = webcam.pixels[webcam.pixels.length/2-width/2];
-          fill(color(255, 255, 255));
+          fill(255);
           text("calibrate right", 20, 40);
         }
 
@@ -292,11 +292,11 @@ Contour findBiggestBlobColor(color gloveColor, int gloveTolerance)
   cv.dilate();
   cv.erode();
 
-  globs = cv.findContours();
-  if(!globs.isEmpty())
+  blobs = cv.findContours();
+  if(!blobs.isEmpty())
   {
-    Contour biggest = globs.get(0);
-    for (Contour blob : globs) {
+    Contour biggest = blobs.get(0);
+    for (Contour blob : blobs) {
       if(blob.area() > biggest.area())
       {
         biggest = blob;
