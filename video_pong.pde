@@ -15,7 +15,7 @@ int ballRadius = 20;
 
 int cvScale = 8; //Should be power of two
 
-int minArea = 2500;
+int minArea = 250;
 
 int maxSpeed = 1000;
 
@@ -24,7 +24,7 @@ float leftPaddleHeight = 0.5;
 float rightPaddleHeight = 0.5;
 
 boolean debug = false;
-boolean printCameraList = true;
+boolean printCameraList = false;
 boolean calibrateRight = false;
 boolean calibrateLeft = false;
 
