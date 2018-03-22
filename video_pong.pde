@@ -3,34 +3,34 @@ import gab.opencv.*;
 import java.awt.Rectangle;
 
 //Parameters:
-color leftGloveColor = color(196,62,44);
+color leftGloveColor = color(196,62,44); //Initial colors
 color rightGloveColor = color(64,127,76);
-int leftGloveTolerance = 40;
+int leftGloveTolerance = 40; //Color tolerance (each color channel can differ by this amount)
 int rightGloveTolerance = 30;
 
-int paddleDistanceFromSide = 20;
+int paddleDistanceFromSide = 20; //Pixels from edge of screen
 int paddleWidth = 25;
 int paddleHeight = 200;
 int ballRadius = 20;
 
-int cvScale = 8; //Should be power of two
+int cvScale = 8; //Should be power of two, scales the openCV buffer (high resolution not needed)
 
-int minArea = 250;
+int minArea = 250; //Minimum blob area that registers as a true blob detection
 
-int maxSpeed = 1000;
+int maxSpeed = 1000; //Max speed of the ball
 
 //Variables
-float leftPaddleHeight = 0.5;
+float leftPaddleHeight = 0.5; //Initial paddle positions
 float rightPaddleHeight = 0.5;
 
 boolean debug = false;
 boolean printCameraList = false;
-boolean calibrateRight = false;
+boolean calibrateRight = false; //If true, sets the paddle blob detection color
 boolean calibrateLeft = false;
 
-float ballX = width/2;
+float ballX = width/2; //Initial ball position
 float ballY = height/2;
-int ballVelX = 200;
+int ballVelX = 200; //Initial ball velocity
 int ballVelY = 300;
 
 int rightScore = 0;
@@ -65,33 +65,33 @@ void setup() {
   }
   println();
 
-  cv = new OpenCV(this, width/cvScale, height/cvScale);
+  cv = new OpenCV(this, width/cvScale, height/cvScale); //scale down because a high resolution isn't needed for blobs
   lastTime = millis();
   resetBall(false);
   frameRate(60);
 }
 
 void draw() {
-  delta = (int)(millis() - lastTime);
+  delta = (int)(millis() - lastTime); //calculates time it takes per loop
   lastTime = millis();
   
   if(webcam.available())
   {
-  //======Get webcam feed===============
+    //======Get webcam feed===============
     webcam.read();
     webcam.updatePixels();    
     
-  //======Get paddle Y coordinates======
+    //======Get paddle Y coordinates======
     //Left
     blob = findBiggestBlobColor(leftGloveColor, leftGloveTolerance);
     if(blob != null && blob.area() > minArea)
     {
       r = blob.getBoundingBox();
-      leftPaddleHeight = (r.y+r.height/2)*cvScale/(float)(webcam.height);
+      leftPaddleHeight = (r.y+r.height/2)*cvScale/(float)(webcam.height); //Set position of the left paddle to the center of the bounding box
       
       if(debug)
       {
-        debugDrawBoundingBox(r, leftGloveColor);
+        debugDrawBoundingBox(r, leftGloveColor);//Draw box around the left paddle
       }
     }
     //Right
@@ -99,17 +99,18 @@ void draw() {
     if(blob != null && blob.area() > minArea)
     {
       r = blob.getBoundingBox();
-      rightPaddleHeight = (r.y+r.height/2)*cvScale/(float)(webcam.height);
+      rightPaddleHeight = (r.y+r.height/2)*cvScale/(float)(webcam.height); //Set position of the right paddle to the center of the bounding box
       
       if(debug)
       {
-        debugDrawBoundingBox(r, rightGloveColor);
+        debugDrawBoundingBox(r, rightGloveColor);//Draw box around the right paddle
       }
     }
-  } //End webcam.available()
-    //Faster if drawing is done outside of webcam.available(), because we don't have to wait for the next frame
+  } //End webcam.available() if statement
+  //Faster if drawing is done outside of webcam.available(), because we don't have to wait for the next camera frame
+  //This makes the ball movement much smoother
   
-//======Draw objects==================  
+  //======Draw objects==================  
   //Draw webcam feed
   pushMatrix();
     scale(-1, 1);
@@ -155,7 +156,7 @@ void draw() {
     debugWriteText();
   }
 
-//======Physics=======================  
+  //======Physics=======================  
   //Integrate ball velocity
   ballX += ballVelX * delta/1000.0;
   ballY += ballVelY * delta/1000.0;
